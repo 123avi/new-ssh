@@ -19,7 +19,6 @@ object SessionManager extends SessionHelper {
 
   import SessionHelper._
 
-
   /**
     *
     * @param target
@@ -76,7 +75,6 @@ class SessionManager(client: SshClient, numOfExecutors: Int) extends Actor with 
 
     case StartSession(target, forceAuth, prompts) =>
       val origSender = sender()
-
       val authenticatedSession: Future[ClientSession] = for {
         session <- createSession(client, target.credentials.username, target.address, target.port)
         authSession <- session.authenticate(target.credentials)
@@ -86,16 +84,17 @@ class SessionManager(client: SshClient, numOfExecutors: Int) extends Actor with 
         case Success(session) =>
           context.become(readyForCommand(prompts, session))
           origSender ! SessionStarted
+
         case Failure(e) =>
           origSender ! SessionCreationFailed(e)
       }
+
     case other =>
       throw new IOException(s"didn't expect $other in state init")
   }
 
   def training(session:ClientSession, pipeTo: ActorRef): Receive = {
     case StartTrainingSession(target, forceAuth) =>
-
       createChannel(uuid, session).foreach { channel =>
         val child = context.actorOf(Trainer.props(channel), s"Trainer-${channel.id}")
         child ! StartTraining(self, 10)
@@ -108,7 +107,6 @@ class SessionManager(client: SshClient, numOfExecutors: Int) extends Actor with 
     case other =>
       throw new IOException(s"didn't expect $other in state training")
   }
-
 
   def readyForCommand(expectedPrompt: Prompt, session: ClientSession): Receive = {
 
@@ -123,7 +121,6 @@ class SessionManager(client: SshClient, numOfExecutors: Int) extends Actor with 
         val exe = commandsQueue.dequeue
         log.info(s"Sending $exe to ${child.path.name}")
         child tell(exe.command, exe.pipeTo)
-
       }
 
     case Terminated(child) =>
@@ -134,10 +131,7 @@ class SessionManager(client: SshClient, numOfExecutors: Int) extends Actor with 
 
   }
 
-
-
   case class CommandToExecute(command: Command, pipeTo: ActorRef)
 
   case object Execute
-
 }

@@ -12,6 +12,7 @@ import org.apache.sshd.common.util.buffer.{Buffer, ByteArrayBuffer}
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
+
 object CommandExecutor{
   def props(session: ClientSession, expect: Prompt) = Props(new CommandExecutor(session, expect))
 }
@@ -29,8 +30,6 @@ class CommandExecutor(session: ClientSession, expect: Prompt) extends Actor
       self ! Kill
       Future.failed(e)
   }
-  var counter = 0
-  //todo remove for test use
   var dataBuffer = new StringBuilder()
 
   override def postStop(): Unit = {
@@ -58,20 +57,17 @@ class CommandExecutor(session: ClientSession, expect: Prompt) extends Actor
 
   }
 
-  def processing(discussionMap: Map[Prompt, ShellCommand], replyTo: ActorRef, buffer: Buffer):
-  Receive = close orElse {
+  def processing(discussionMap: Map[Prompt, ShellCommand], replyTo: ActorRef, buffer: Buffer): Receive =
+    close orElse {
     case DoProcess =>
 
       cnl.foreach { channel =>
-        log.info(s"start negotiating on channel, $channel cycle $counter")
-        channel.listenOnChannelOut(counter, buffer).retry(delay = 100 millis, retries = 5, timeout = 5 second).onComplete {
+        channel.listenOnChannelOut(buffer).retry(delay = 100 millis, retries = 5, timeout = 5 second).onComplete {
           case Success(bfr) =>
-            log.info(s" $counter completed ${bfr.array().length}")
             assert(channel.channelShell.isOpen)
             val data: String = new String(buffer.array, buffer.rpos, buffer.available)
             dataBuffer.append(data)
             val dataStr = dataBuffer.toString()
-            log.info(s" BUFFERED :\n $dataStr")
             if (expect.matches(dataStr)) {
               log.info(s"Reached expected prompt $expect- negotiation complete ")
               replyTo ! DoneProcessing
@@ -86,7 +82,6 @@ class CommandExecutor(session: ClientSession, expect: Prompt) extends Actor
                 case _ =>
                   dataBuffer.clear()
                   dataBuffer.append(dataStr.lines.toArray.last)
-                  counter += 1
                   buffer.clear()
                   context.system.scheduler.scheduleOnce(1 seconds, self, DoProcess)
               }
@@ -113,8 +108,7 @@ class CommandExecutor(session: ClientSession, expect: Prompt) extends Actor
         }
       }
 
-    case other =>
-      throw new IOException(s"didn't expect $other in state processing")
+    case other => throw new IOException(s"didn't expect $other in state processing")
 
   }
 

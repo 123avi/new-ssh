@@ -41,7 +41,7 @@ trait ChannelHelper {
   }
 
   implicit class ChannelImplicits(cnl: Channel) {
-    def listenOnChannelOut(readCycle: Int, buf: Buffer): Future[Buffer] = {
+    def listenOnChannelOut( buf: Buffer): Future[Buffer] = {
       val p = Promise[Buffer]()
       val channelShell = cnl.channelShell
 

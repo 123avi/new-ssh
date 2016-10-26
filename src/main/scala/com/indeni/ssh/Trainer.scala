@@ -21,14 +21,12 @@ object Trainer {
     */
   case class StartTraining(pipeTo: ActorRef, maxTrainingCycles: Int = 10, minForDeduction: Int = 3)
 
-
 }
 
 class Trainer(channel: Channel) extends Actor
   with SshdClient2 with FutureOps with ActorLogging {
 
   import Trainer._
-
 
   override implicit val ec: ExecutionContext = context.dispatcher
   implicit val scheduler = context.system.scheduler
@@ -65,7 +63,7 @@ class Trainer(channel: Channel) extends Actor
     case ReadTrainingData(counter) =>
       log.info(s"Start reading from channel, $channel cycle $counter")
 
-      channel.listenOnChannelOut(counter, buffer).retry(delay = 100 millis, retries = 5, timeout = 5 second).onComplete {
+      channel.listenOnChannelOut(buffer).retry(delay = 100 millis, retries = 5, timeout = 5 second).onComplete {
         case Success(bfr) =>
           log.info(s" $counter completed ${bfr.array().length}")
           assert(channel.channelShell.isOpen)

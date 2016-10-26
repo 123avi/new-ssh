@@ -51,7 +51,6 @@ trait SessionHelper {
     p.future
   }
 
-
   implicit class SessionImplicits(session: ClientSession) {
 
     import SessionHelper._

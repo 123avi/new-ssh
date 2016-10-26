@@ -9,7 +9,11 @@ case object CloseChannel extends Command
 
 case class SimpleCommand(cmd: ShellCommand) extends Command
 
-// Map when receiving prompt which command to execute
+/**
+  *
+  * @param instructions - map when received prompt -> command to execute
+  * @tparam P
+  */
 case class ProcessPrompts[P <: Prompt](instructions: Map[P, ShellCommand]) extends Command
 
 sealed trait Response

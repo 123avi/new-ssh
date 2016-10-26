@@ -100,8 +100,7 @@ class SessionManagerSpec extends TestKit(ActorSystem("test-system"))
 
     it("Should Execute execute command and stop when reading regex prompt") {
       val sessionManager = TestActorRef(new SessionManager(client.createClient(4, "10000", "10000"), 2))
-      val fakeAddress = "190.94.73.15"
-      val target = SshTarget(fakeAddress, port, Credentials(user, Some(pwd), None, None))
+      val target = SshTarget(address, port, Credentials(user, Some(pwd), None, None))
       val r = Await.result(sessionManager ? StartSession(target, forceAuth = true, promptRx),
         testTimeout)
       assertResult(SessionStarted)(r)
@@ -148,8 +147,8 @@ class SessionManagerSpec extends TestKit(ActorSystem("test-system"))
 
     it("Should fail to create session with wrong host ") {
       val sessionManager = TestActorRef(new SessionManager(client.createClient(4, "10000", "10000"), 2))
-      val host = "192.94.73.16"
-      val target = SshTarget("192.94.73.100", port, Credentials(user, Some(pwd), None,
+      val fakeAddress = "190.94.73.15"
+      val target = SshTarget(fakeAddress, port, Credentials(user, Some(pwd), None,
         None))
       sessionManager ! StartSession(target, forceAuth = true, promptRx)
       expectMsgPF(authTimeout) {
